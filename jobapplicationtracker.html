@@ -1,0 +1,512 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Job Application Tracker</title>
+  <style>
+    :root { color-scheme: light dark; }
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 0; padding: 24px; }
+    h1 { margin: 0 0 16px; font-size: 22px; }
+    .wrap { max-width: 1100px; margin: 0 auto; }
+    .card { border: 1px solid rgba(127,127,127,.35); border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+    .grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 12px; }
+    .col-12 { grid-column: span 12; }
+    .col-6 { grid-column: span 6; }
+    .col-4 { grid-column: span 4; }
+    .col-3 { grid-column: span 3; }
+    .col-2 { grid-column: span 2; }
+    @media (max-width: 900px){ .col-6,.col-4,.col-3,.col-2 { grid-column: span 12; } }
+    label { display: block; font-size: 12px; opacity: .8; margin-bottom: 6px; }
+    input, select, textarea {
+      width: 100%; box-sizing: border-box; padding: 10px 10px; border-radius: 10px;
+      border: 1px solid rgba(127,127,127,.45); background: transparent; outline: none;
+    }
+    textarea { min-height: 38px; resize: vertical; }
+    .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    button {
+      border: 1px solid rgba(127,127,127,.45); background: transparent; padding: 10px 12px;
+      border-radius: 10px; cursor: pointer;
+    }
+    button.primary { border-color: rgba(0,140,255,.8); }
+    button.danger { border-color: rgba(255,80,80,.8); }
+    button:disabled { opacity: .5; cursor: not-allowed; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: 10px 8px; border-top: 1px solid rgba(127,127,127,.25); vertical-align: top; }
+    th { font-size: 12px; opacity: .85; position: sticky; top: 0; background: canvas; }
+    .pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; border: 1px solid rgba(127,127,127,.35); font-size: 12px; }
+    .muted { opacity: .75; }
+    .right { text-align: right; }
+    .nowrap { white-space: nowrap; }
+    a { color: inherit; }
+    .small { font-size: 12px; }
+    .footer { display:flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Job Application Tracker</h1>
+
+    <div class="card">
+      <form id="appForm" class="grid" autocomplete="off">
+        <input type="hidden" id="editId" />
+
+        <div class="col-4">
+          <label for="company">Company *</label>
+          <input id="company" required placeholder="e.g., Google" />
+        </div>
+
+        <div class="col-4">
+          <label for="role">Role *</label>
+          <input id="role" required placeholder="e.g., Software Engineer Intern" />
+        </div>
+
+        <div class="col-4">
+          <label for="location">Location</label>
+          <input id="location" placeholder="e.g., Hyderabad / Remote" />
+        </div>
+
+        <div class="col-3">
+          <label for="status">Status *</label>
+          <select id="status" required>
+            <option value="Applied">Applied</option>
+            <option value="OA">OA</option>
+            <option value="Interview">Interview</option>
+            <option value="Offer">Offer</option>
+            <option value="Rejected">Rejected</option>
+            <option value="Withdrawn">Withdrawn</option>
+          </select>
+        </div>
+
+        <div class="col-3">
+          <label for="appliedDate">Applied Date</label>
+          <input id="appliedDate" type="date" />
+        </div>
+
+        <div class="col-3">
+          <label for="nextStepDate">Next Step Date</label>
+          <input id="nextStepDate" type="date" />
+        </div>
+
+        <div class="col-3">
+          <label for="priority">Priority</label>
+          <select id="priority">
+            <option value="Medium">Medium</option>
+            <option value="High">High</option>
+            <option value="Low">Low</option>
+          </select>
+        </div>
+
+        <div class="col-6">
+          <label for="link">Job Link</label>
+          <input id="link" type="url" placeholder="https://..." />
+        </div>
+
+        <div class="col-6">
+          <label for="contact">Contact</label>
+          <input id="contact" placeholder="Recruiter / Referral name" />
+        </div>
+
+        <div class="col-12">
+          <label for="notes">Notes</label>
+          <textarea id="notes" placeholder="Add reminders, interview feedback, etc."></textarea>
+        </div>
+
+        <div class="col-12 row">
+          <button class="primary" type="submit" id="saveBtn">Add Application</button>
+          <button type="button" id="cancelEditBtn" disabled>Cancel Edit</button>
+          <span class="muted small" id="hint">Saved locally in your browser (localStorage).</span>
+        </div>
+      </form>
+    </div>
+
+    <div class="card">
+      <div class="grid">
+        <div class="col-4">
+          <label for="search">Search</label>
+          <input id="search" placeholder="company / role / location / contact / notes" />
+        </div>
+
+        <div class="col-3">
+          <label for="filterStatus">Filter Status</label>
+          <select id="filterStatus">
+            <option value="All">All</option>
+            <option value="Applied">Applied</option>
+            <option value="OA">OA</option>
+            <option value="Interview">Interview</option>
+            <option value="Offer">Offer</option>
+            <option value="Rejected">Rejected</option>
+            <option value="Withdrawn">Withdrawn</option>
+          </select>
+        </div>
+
+        <div class="col-3">
+          <label for="sortBy">Sort By</label>
+          <select id="sortBy">
+            <option value="updatedDesc">Last Updated (new→old)</option>
+            <option value="updatedAsc">Last Updated (old→new)</option>
+            <option value="appliedDesc">Applied Date (new→old)</option>
+            <option value="appliedAsc">Applied Date (old→new)</option>
+            <option value="companyAsc">Company (A→Z)</option>
+            <option value="companyDesc">Company (Z→A)</option>
+            <option value="statusAsc">Status (A→Z)</option>
+          </select>
+        </div>
+
+        <div class="col-2">
+          <label>&nbsp;</label>
+          <button type="button" id="exportBtn">Export JSON</button>
+        </div>
+
+        <div class="col-12" style="overflow:auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>Company / Role</th>
+                <th>Status</th>
+                <th>Dates</th>
+                <th>Details</th>
+                <th class="right">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="tbody"></tbody>
+          </table>
+        </div>
+
+        <div class="col-12 footer">
+          <div class="small muted" id="summary"></div>
+          <div class="row">
+            <button type="button" id="importBtn">Import JSON</button>
+            <input type="file" id="importFile" accept="application/json" hidden />
+            <button type="button" class="danger" id="clearBtn">Clear All</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+(() => {
+  const STORAGE_KEY = "job_app_tracker_v1";
+
+  const $ = (id) => document.getElementById(id);
+
+  const els = {
+    form: $("appForm"),
+    editId: $("editId"),
+    company: $("company"),
+    role: $("role"),
+    location: $("location"),
+    status: $("status"),
+    appliedDate: $("appliedDate"),
+    nextStepDate: $("nextStepDate"),
+    priority: $("priority"),
+    link: $("link"),
+    contact: $("contact"),
+    notes: $("notes"),
+    saveBtn: $("saveBtn"),
+    cancelEditBtn: $("cancelEditBtn"),
+    tbody: $("tbody"),
+    summary: $("summary"),
+    search: $("search"),
+    filterStatus: $("filterStatus"),
+    sortBy: $("sortBy"),
+    clearBtn: $("clearBtn"),
+    exportBtn: $("exportBtn"),
+    importBtn: $("importBtn"),
+    importFile: $("importFile"),
+  };
+
+  /** @type {Array<any>} */
+  let items = load();
+
+  function nowISO() {
+    return new Date().toISOString();
+  }
+
+  function uid() {
+    return (crypto?.randomUUID?.() || ("id_" + Math.random().toString(16).slice(2) + Date.now().toString(16)));
+  }
+
+  function load() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      return [];
+    }
+  }
+
+  function save() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+  }
+
+  function esc(s) {
+    return (s ?? "").toString()
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+  }
+
+  function statusPill(status) {
+    const dot = {
+      Applied: "🟦",
+      OA: "🟪",
+      Interview: "🟧",
+      Offer: "🟩",
+      Rejected: "🟥",
+      Withdrawn: "⬛"
+    }[status] || "⬜";
+    return `<span class="pill">${dot} ${esc(status)}</span>`;
+  }
+
+  function fmtDate(d) {
+    if (!d) return "—";
+    // Keep it simple and stable: yyyy-mm-dd
+    return d;
+  }
+
+  function computeView() {
+    const q = els.search.value.trim().toLowerCase();
+    const st = els.filterStatus.value;
+
+    let view = items.slice();
+
+    if (st !== "All") view = view.filter(x => x.status === st);
+
+    if (q) {
+      view = view.filter(x => {
+        const blob = [
+          x.company, x.role, x.location, x.status, x.priority,
+          x.link, x.contact, x.notes
+        ].join(" ").toLowerCase();
+        return blob.includes(q);
+      });
+    }
+
+    const sorter = els.sortBy.value;
+    const byText = (a, b, key, dir=1) => (a[key]||"").localeCompare(b[key]||"") * dir;
+    const byDate = (a, b, key, dir=1) => ((a[key]||"") < (b[key]||"") ? -1 : (a[key]||"") > (b[key]||"") ? 1 : 0) * dir;
+
+    if (sorter === "updatedDesc") view.sort((a,b)=> (a.updatedAt < b.updatedAt ? 1 : -1));
+    if (sorter === "updatedAsc")  view.sort((a,b)=> (a.updatedAt > b.updatedAt ? 1 : -1));
+    if (sorter === "appliedDesc") view.sort((a,b)=> byDate(a,b,"appliedDate",-1));
+    if (sorter === "appliedAsc")  view.sort((a,b)=> byDate(a,b,"appliedDate", 1));
+    if (sorter === "companyAsc")  view.sort((a,b)=> byText(a,b,"company", 1));
+    if (sorter === "companyDesc") view.sort((a,b)=> byText(a,b,"company",-1));
+    if (sorter === "statusAsc")   view.sort((a,b)=> byText(a,b,"status", 1));
+
+    return view;
+  }
+
+  function render() {
+    const view = computeView();
+
+    els.tbody.innerHTML = view.map(x => {
+      const link = x.link ? `<a href="${esc(x.link)}" target="_blank" rel="noreferrer">Open</a>` : "—";
+      const notes = x.notes ? esc(x.notes) : "—";
+      const contact = x.contact ? esc(x.contact) : "—";
+      const location = x.location ? esc(x.location) : "—";
+
+      return `
+        <tr>
+          <td>
+            <div><strong>${esc(x.company)}</strong> <span class="muted">· ${esc(x.role)}</span></div>
+            <div class="small muted">${location}</div>
+          </td>
+          <td class="nowrap">
+            ${statusPill(x.status)}
+            <div class="small muted">Priority: ${esc(x.priority || "—")}</div>
+          </td>
+          <td class="small">
+            <div><span class="muted">Applied:</span> ${fmtDate(x.appliedDate)}</div>
+            <div><span class="muted">Next:</span> ${fmtDate(x.nextStepDate)}</div>
+            <div class="muted">Updated: <span class="mono">${esc((x.updatedAt || "").slice(0,19).replace("T"," "))}</span></div>
+          </td>
+          <td class="small">
+            <div><span class="muted">Link:</span> ${link}</div>
+            <div><span class="muted">Contact:</span> ${contact}</div>
+            <div><span class="muted">Notes:</span> ${notes}</div>
+          </td>
+          <td class="right nowrap">
+            <button type="button" data-act="edit" data-id="${esc(x.id)}">Edit</button>
+            <button type="button" class="danger" data-act="del" data-id="${esc(x.id)}">Delete</button>
+          </td>
+        </tr>
+      `;
+    }).join("");
+
+    // Summary
+    const counts = view.reduce((acc, x) => (acc[x.status] = (acc[x.status]||0)+1, acc), {});
+    const total = view.length;
+    const allTotal = items.length;
+    const parts = ["Applied","OA","Interview","Offer","Rejected","Withdrawn"]
+      .map(s => `${s}: ${counts[s]||0}`).join(" · ");
+    els.summary.textContent = `Showing ${total}/${allTotal} applications — ${parts}`;
+  }
+
+  function resetForm() {
+    els.editId.value = "";
+    els.form.reset();
+    els.priority.value = "Medium";
+    els.status.value = "Applied";
+    els.saveBtn.textContent = "Add Application";
+    els.cancelEditBtn.disabled = true;
+  }
+
+  function upsertFromForm() {
+    const data = {
+      id: els.editId.value || uid(),
+      company: els.company.value.trim(),
+      role: els.role.value.trim(),
+      location: els.location.value.trim(),
+      status: els.status.value,
+      appliedDate: els.appliedDate.value,
+      nextStepDate: els.nextStepDate.value,
+      priority: els.priority.value,
+      link: els.link.value.trim(),
+      contact: els.contact.value.trim(),
+      notes: els.notes.value.trim(),
+      updatedAt: nowISO(),
+      createdAt: nowISO(),
+    };
+
+    if (!data.company || !data.role) return;
+
+    const idx = items.findIndex(x => x.id === data.id);
+    if (idx >= 0) {
+      data.createdAt = items[idx].createdAt || data.createdAt;
+      items[idx] = data;
+    } else {
+      items.unshift(data);
+    }
+    save();
+    render();
+    resetForm();
+  }
+
+  function startEdit(id) {
+    const x = items.find(i => i.id === id);
+    if (!x) return;
+    els.editId.value = x.id;
+    els.company.value = x.company || "";
+    els.role.value = x.role || "";
+    els.location.value = x.location || "";
+    els.status.value = x.status || "Applied";
+    els.appliedDate.value = x.appliedDate || "";
+    els.nextStepDate.value = x.nextStepDate || "";
+    els.priority.value = x.priority || "Medium";
+    els.link.value = x.link || "";
+    els.contact.value = x.contact || "";
+    els.notes.value = x.notes || "";
+    els.saveBtn.textContent = "Save Changes";
+    els.cancelEditBtn.disabled = false;
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function removeItem(id) {
+    const x = items.find(i => i.id === id);
+    if (!x) return;
+    if (!confirm(`Delete application for ${x.company} - ${x.role}?`)) return;
+    items = items.filter(i => i.id !== id);
+    save();
+    render();
+    if (els.editId.value === id) resetForm();
+  }
+
+  function clearAll() {
+    if (!confirm("This will delete ALL saved applications from this browser. Continue?")) return;
+    items = [];
+    save();
+    render();
+    resetForm();
+  }
+
+  function exportJSON() {
+    const blob = new Blob([JSON.stringify(items, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "job_applications.json";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  function importJSONFile(file) {
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const data = JSON.parse(reader.result);
+        if (!Array.isArray(data)) throw new Error("Invalid JSON format");
+        // Basic normalization
+        const cleaned = data.map(x => ({
+          id: x.id || uid(),
+          company: (x.company||"").toString(),
+          role: (x.role||"").toString(),
+          location: (x.location||"").toString(),
+          status: x.status || "Applied",
+          appliedDate: x.appliedDate || "",
+          nextStepDate: x.nextStepDate || "",
+          priority: x.priority || "Medium",
+          link: (x.link||"").toString(),
+          contact: (x.contact||"").toString(),
+          notes: (x.notes||"").toString(),
+          createdAt: x.createdAt || nowISO(),
+          updatedAt: x.updatedAt || nowISO(),
+        }));
+        items = cleaned;
+        save();
+        render();
+        resetForm();
+        alert("Import successful!");
+      } catch (e) {
+        alert("Import failed: " + (e?.message || "Invalid file"));
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  // Events
+  els.form.addEventListener("submit", (e) => {
+    e.preventDefault();
+    upsertFromForm();
+  });
+
+  els.cancelEditBtn.addEventListener("click", () => resetForm());
+
+  els.tbody.addEventListener("click", (e) => {
+    const btn = e.target.closest("button[data-act]");
+    if (!btn) return;
+    const id = btn.getAttribute("data-id");
+    const act = btn.getAttribute("data-act");
+    if (act === "edit") startEdit(id);
+    if (act === "del") removeItem(id);
+  });
+
+  ["input","change"].forEach(evt => {
+    els.search.addEventListener(evt, render);
+    els.filterStatus.addEventListener(evt, render);
+    els.sortBy.addEventListener(evt, render);
+  });
+
+  els.clearBtn.addEventListener("click", clearAll);
+  els.exportBtn.addEventListener("click", exportJSON);
+
+  els.importBtn.addEventListener("click", () => els.importFile.click());
+  els.importFile.addEventListener("change", (e) => {
+    const file = e.target.files?.[0];
+    if (file) importJSONFile(file);
+    els.importFile.value = "";
+  });
+
+  // Initial
+  render();
+})();
+</script>
+</body>
+</html>
